@@ -11,8 +11,7 @@ var MOBILE_HEAD_TAGS = module.exports.MOBILE_HEAD_TAGS = [
 
 var MOBILE_IOS_HEAD_TAGS = [
   // iOS-specific meta tags for fullscreen when pinning to homescreen.
-  Meta({name: 'apple-mobile-web-app-capable', content: 'yes'}),
-  Meta({name: 'apple-mobile-web-app-status-bar-style', content: 'black'})
+  Meta({name: 'apple-mobile-web-app-capable', content: 'no'})
 ];
 
 function Meta (attrs) {
