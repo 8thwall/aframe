@@ -73281,6 +73281,11 @@ module.exports.registerComponent = function (name, definition) {
   });
 
   if (components[name]) {
+    if (name === 'xrweb') {
+      warn('xrweb component is being registered multiple times.');
+      return components[name];
+    }
+
     throw new Error('The component `' + name + '` has been already registered. ' +
                     'Check that you are not loading two versions of the same component ' +
                     'or two different components of the same name.');
@@ -73877,7 +73882,7 @@ module.exports.AScene = registerElement('a-scene', {
           scenes.push(self);
         }
 
-        window.XR ? onPlay() : window.addEventListener('xrloaded', onPlay);
+        window.XR8 ? onPlay() : window.addEventListener('xrloaded', onPlay);
 
         // Handler to exit VR (e.g., Oculus Browser back button).
         this.onVRPresentChangeBound = bind(this.onVRPresentChange, this);
@@ -76287,7 +76292,7 @@ registerGeometry('triangle', {
 
 },{"../core/geometry":125,"../lib/three":172}],170:[function(_dereq_,module,exports){
 // Prevent native WebXR implementation from impeding 8th Wall XR
-if (window.XR && typeof window.XR === 'function') {
+if (!window.XR8 && window.XR && typeof window.XR === 'function') {
   window.nativeXR = window.XR;
   window.XR = undefined;
 }
@@ -76386,7 +76391,7 @@ _dereq_('./core/a-mixin');
 _dereq_('./extras/components/');
 _dereq_('./extras/primitives/');
 
-console.log('8-Frame Version: 0.9.0 (Date 2019-06-04, Commit #5ff7470c)');
+console.log('8-Frame Version: 0.9.0 (Date 2019-11-25, Commit #e532c7b9)');
 console.log('three Version (https://github.com/supermedium/three.js):',
             pkg.dependencies['super-three']);
 console.log('WebVR Polyfill Version:', pkg.dependencies['webvr-polyfill']);
@@ -76417,6 +76422,11 @@ module.exports = window.AFRAME = {
   utils: utils,
   version: pkg.version
 };
+
+// If 8frame loads after XR8, manually register the component
+if (window.XR8) {
+  window.AFRAME.registerComponent('xrweb', window.XR8.AFrame.xrwebComponent());
+}
 
 },{"../package":72,"../vendor/starts-with-polyfill":209,"./components/index":81,"./core/a-assets":118,"./core/a-cubemap":119,"./core/a-entity":120,"./core/a-mixin":121,"./core/a-node":122,"./core/a-register-element":123,"./core/component":124,"./core/geometry":125,"./core/scene/a-scene":127,"./core/scene/scenes":131,"./core/schema":133,"./core/shader":134,"./core/system":135,"./extras/components/":136,"./extras/primitives/":139,"./extras/primitives/getMeshMixin":138,"./extras/primitives/primitives":140,"./geometries/index":161,"./lib/three":172,"./shaders/index":174,"./style/aframe.css":180,"./style/rStats.css":181,"./systems/index":185,"./utils/":198,"./utils/isIOSOlderThan10":200,"animejs":2,"custom-event-polyfill":9,"present":49,"promise-polyfill":51,"webvr-polyfill":67}],171:[function(_dereq_,module,exports){
 window.aframeStats = function (scene) {

@@ -98,7 +98,7 @@ require('./core/a-mixin');
 require('./extras/components/');
 require('./extras/primitives/');
 
-console.log('8-Frame Version: 0.9.0 (Date 2019-06-04, Commit #5ff7470c)');
+console.log('8-Frame Version: 0.9.0 (Date 2019-11-25, Commit #e532c7b9)');
 console.log('three Version (https://github.com/supermedium/three.js):',
             pkg.dependencies['super-three']);
 console.log('WebVR Polyfill Version:', pkg.dependencies['webvr-polyfill']);
