@@ -619,7 +619,8 @@ class AScene extends AEntity {
       antialias: !isMobile,
       canvas: this.canvas,
       logarithmicDepthBuffer: false,
-      powerPreference: 'high-performance'
+      powerPreference: 'high-performance',
+      preserveDrawingBuffer: true
     };
 
     this.maxCanvasSize = {height: -1, width: -1};
@@ -650,6 +651,10 @@ class AScene extends AEntity {
 
       if (rendererAttr.multiviewStereo) {
         rendererConfig.multiviewStereo = rendererAttr.multiviewStereo === 'true';
+      }
+
+      if (rendererAttr.preserveDrawingBuffer) {
+        rendererConfig.preserveDrawingBuffer = rendererAttr.preserveDrawingBuffer === 'true';
       }
 
       this.maxCanvasSize = {
