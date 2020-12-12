@@ -22,7 +22,7 @@ module.exports.System = registerSystem('renderer', {
     gammaOutput: {default: false},
     alpha: {default: true},
     foveationLevel: {default: 0},
-    useWebGL1: {default: false}
+    webgl2: {default: false}
   },
 
   init: function () {
