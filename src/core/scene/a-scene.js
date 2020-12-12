@@ -629,6 +629,8 @@ module.exports.AScene = registerElement('a-scene', {
 
         this.maxCanvasSize = {height: 1920, width: 1920};
 
+        // By default, we are having 8Frame 1.1.0 run WebGL1 instead of vanilla Aframe-1.1.0's
+        // default behavior of using WebGL2.
         let useWebGL2 = false;
         if (this.hasAttribute('renderer')) {
           rendererAttrString = this.getAttribute('renderer');
