@@ -659,8 +659,8 @@ module.exports.AScene = registerElement('a-scene', {
           if (rendererAttr.webgl2) {
             // We only want to use WebGL2 if they explicitly specify 'renderer: "webgl2: true"' and
             // their device is capable of webgl2 rendering.
-            const isWebGL2AVailable = !!document.createElement('canvas').getContext('webgl2');
-            useWebGL2 = rendererAttr.webgl2 === 'true' && isWebGL2AVailable;
+            const isWebGL2Available = !!document.createElement('canvas').getContext('webgl2');
+            useWebGL2 = rendererAttr.webgl2 === 'true' && isWebGL2Available;
           }
 
           this.maxCanvasSize = {
