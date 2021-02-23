@@ -651,8 +651,7 @@ class AScene extends AEntity {
       };
     }
 
-    renderer = this.renderer = useWebGL2
-      ? new THREE.WebGLRenderer(rendererConfig) : new THREE.WebGL1Renderer(rendererConfig);
+    renderer = this.renderer = new THREE.WebGLRenderer(rendererConfig);
     renderer.setPixelRatio(window.devicePixelRatio);
 
     if (this.camera) { renderer.xr.setPoseTarget(this.camera.el.object3D); }
