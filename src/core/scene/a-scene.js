@@ -81,7 +81,6 @@ class AScene extends AEntity {
     this.setAttribute('inspector', '');
     this.setAttribute('keyboard-shortcuts', '');
     this.setAttribute('screenshot', '');
-    this.setAttribute('device-orientation-permission-ui', '');
     super.doConnectedCallback();
 
     // Renderer initialization
