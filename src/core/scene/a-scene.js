@@ -322,7 +322,9 @@ module.exports.AScene = registerElement('a-scene', {
                 function requestFail (error) {
                   var useAR = xrMode === 'immersive-ar';
                   var mode = useAR ? 'AR' : 'VR';
-                  throw new Error('Failed to enter ' + mode + ' mode (`requestSession`) ' + error);
+                  reject(
+                    new Error('Failed to enter ' + mode + ' mode (`requestSession`) ' + error)
+                  );
                 }
               );
             });
