@@ -1,5 +1,5 @@
 diff --git a/node_modules/super-three/build/three.js b/node_modules/super-three/build/three.js
-index 8b13338..0de8780 100644
+index 8b13338..99060fd 100644
 --- a/node_modules/super-three/build/three.js
 +++ b/node_modules/super-three/build/three.js
 @@ -18770,7 +18770,17 @@
@@ -16,7 +16,7 @@ index 8b13338..0de8780 100644
 +				// Therefore, in 1.3.0 the parent was the scene, where as in 1.2.0 the parent is the Group
 +				// Three.js node.  We want to continue the 1.2.0 behavior in order for xr-aframe to work
 +				// with both 1.2.0 and 1.3.0.
-+				const parent = camera.parent
++				const parent = camera.parent;
 +
  				updateCamera(cameraVR, parent);
  
