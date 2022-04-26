@@ -1,5 +1,5 @@
 diff --git a/node_modules/super-three/build/three.js b/node_modules/super-three/build/three.js
-index 8b13338..b62464a 100644
+index 8b13338..0de8780 100644
 --- a/node_modules/super-three/build/three.js
 +++ b/node_modules/super-three/build/three.js
 @@ -18770,7 +18770,17 @@
@@ -8,20 +8,20 @@ index 8b13338..b62464a 100644
  				var object = poseTarget || camera;
 -				const parent = object.parent;
 +
-+				// Object is the Group Three.js node that contains the virtual camera.      In 1.3.0, the
++				// Object is the Group Three.js node that contains the virtual camera.  In 1.3.0, the
 +				// original code for getting the parent is:
-+				//       const parent = object.parent;
++				//   const parent = object.parent;
 +				// In 1.2.0, the code for setting the parent local variable is:
-+				//       const parent = camera.parent
++				//   const parent = camera.parent
 +				// Therefore, in 1.3.0 the parent was the scene, where as in 1.2.0 the parent is the Group
-+				// Three.js node.     We want to continue the 1.2.0 behavior in order for xr-aframe to work
++				// Three.js node.  We want to continue the 1.2.0 behavior in order for xr-aframe to work
 +				// with both 1.2.0 and 1.3.0.
 +				const parent = camera.parent
 +
  				updateCamera(cameraVR, parent);
  
  				for (let i = 0; i < cameras.length; i++) {
-@@ -18780,8 +18790,13 @@
+@@ -18780,8 +18790,15 @@
  				cameraVR.matrixWorld.decompose(cameraVR.position, cameraVR.quaternion, cameraVR.scale); // update user camera and its children
  
  				object.matrixWorld.copy(cameraVR.matrixWorld);
@@ -29,15 +29,17 @@ index 8b13338..b62464a 100644
 -				object.matrix.decompose(object.position, object.quaternion, object.scale);
 +
 +				// AFrame 1.2.0 only copies over matrixWorld which is giving us the correct result.
-+				// Otherwise we are setting the group node to the origin since the user specified origin
-+				// on <a-camera/> was the local matrix.
-+				// object.matrix.copy(cameraVR.matrix);
-+				// object.matrix.decompose(object.position, object.quaternion, object.scale);
++				// Otherwise we are setting the group node to the origin since cameraVR local matrix is
++				// the identity matrix.  We then do futher work in xr-aframe to scale and correct both
++				// cameraVR and object (which is sceneCamObj).  By mirror 1.2.0 we are able to have our
++				// code work for both.  So we are removing 1.3.0's:
++				//   object.matrix.copy(cameraVR.matrix);
++				//   object.matrix.decompose(object.position, object.quaternion, object.scale);
 +
  				const children = object.children;
  
  				for (let i = 0, l = children.length; i < l; i++) {
-@@ -19642,6 +19657,8 @@
+@@ -19642,6 +19659,8 @@
  			info.programs = programCache.programs;
  			_this.capabilities = capabilities;
  			_this.extensions = extensions;
