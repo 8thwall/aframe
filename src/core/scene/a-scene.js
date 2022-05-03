@@ -674,7 +674,7 @@ module.exports.AScene = registerElement('a-scene', {
         }
 
         // Even if the user wants webgl2, if it's not available then fall back to webgl1.
-        if (!document.createElement('canvas').getContext('webgl2')) {
+        if (useWebGL2 && !document.createElement('canvas').getContext('webgl2')) {
           useWebGL2 = false;
         }
 
