@@ -630,9 +630,9 @@ module.exports.AScene = registerElement('a-scene', {
 
         this.maxCanvasSize = {height: 1920, width: 1920};
 
-        // By default, we are having 8Frame 1.1.0 run WebGL1 instead of vanilla Aframe-1.1.0's
-        // default behavior of using WebGL2.
-        let useWebGL2 = false;
+        // Use WebGL2 as long as it is available, similar to vanilla Aframe-1.3.0.
+        let useWebGL2 = !!document.createElement('canvas').getContext('webgl2');
+
         if (this.hasAttribute('renderer')) {
           rendererAttrString = this.getAttribute('renderer');
           rendererAttr = utils.styleParser.parse(rendererAttrString);
@@ -658,10 +658,8 @@ module.exports.AScene = registerElement('a-scene', {
           }
 
           if (rendererAttr.webgl2) {
-            // We only want to use WebGL2 if they explicitly specify 'renderer: "webgl2: true"' and
-            // their device is capable of webgl2 rendering.
-            const isWebGL2Available = !!document.createElement('canvas').getContext('webgl2');
-            useWebGL2 = rendererAttr.webgl2 === 'true' && isWebGL2Available;
+            // We only want to use WebGL 1 if they explicitly specify 'renderer: "webgl2: false"'.
+            useWebGL2 = rendererAttr.webgl2 !== 'false';
           }
 
           this.maxCanvasSize = {
@@ -673,6 +671,8 @@ module.exports.AScene = registerElement('a-scene', {
               : this.maxCanvasSize.height
           };
         }
+
+        console.log('[a-frame] using WebGL2: ', useWebGL2);
 
         renderer = this.renderer = useWebGL2
           ? new THREE.WebGLRenderer(rendererConfig) : new THREE.WebGL1Renderer(rendererConfig);
