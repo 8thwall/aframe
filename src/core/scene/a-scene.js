@@ -672,8 +672,6 @@ module.exports.AScene = registerElement('a-scene', {
           };
         }
 
-        console.log('[a-frame] using WebGL2: ', useWebGL2);
-
         renderer = this.renderer = useWebGL2
           ? new THREE.WebGLRenderer(rendererConfig) : new THREE.WebGL1Renderer(rendererConfig);
         renderer.setPixelRatio(window.devicePixelRatio);
