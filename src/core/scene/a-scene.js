@@ -632,7 +632,7 @@ module.exports.AScene = registerElement('a-scene', {
 
         // Use WebGL2 as long as it is available or the user specifies webgl2: false.  Aframe-1.3.0
         // is also WebGL2 by default.
-        let useWebGL2 = !!document.createElement('canvas').getContext('webgl2');
+        let useWebGL2 = true;
 
         if (this.hasAttribute('renderer')) {
           rendererAttrString = this.getAttribute('renderer');
@@ -671,6 +671,11 @@ module.exports.AScene = registerElement('a-scene', {
               ? parseInt(rendererAttr.maxCanvasHeight)
               : this.maxCanvasSize.height
           };
+        }
+
+        // Even if the user wants webgl2, if it's not available then fall back to webgl1.
+        if (!document.createElement('canvas').getContext('webgl2')) {
+          useWebGL2 = false;
         }
 
         renderer = this.renderer = useWebGL2
