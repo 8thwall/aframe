@@ -24287,7 +24287,17 @@ module.exports = anime;
 
 				const cameras = cameraVR.cameras;
 				var object = poseTarget || camera;
-				const parent = object.parent;
+
+				// Object is the Group Three.js node that contains the virtual camera.  In 1.3.0, the
+				// original code for getting the parent is:
+				//   const parent = object.parent;
+				// In 1.2.0, the code for setting the parent local variable is:
+				//   const parent = camera.parent
+				// Therefore, in 1.3.0 the parent was the scene, where as in 1.2.0 the parent is the Group
+				// Three.js node.  We want to continue the 1.2.0 behavior in order for xr-aframe to work
+				// with both 1.2.0 and 1.3.0.
+				const parent = camera.parent;
+
 				updateCamera(cameraVR, parent);
 
 				for (let i = 0; i < cameras.length; i++) {
@@ -24297,8 +24307,15 @@ module.exports = anime;
 				cameraVR.matrixWorld.decompose(cameraVR.position, cameraVR.quaternion, cameraVR.scale); // update user camera and its children
 
 				object.matrixWorld.copy(cameraVR.matrixWorld);
-				object.matrix.copy(cameraVR.matrix);
-				object.matrix.decompose(object.position, object.quaternion, object.scale);
+
+				// AFrame 1.2.0 only copies over matrixWorld which is giving us the correct result.
+				// Otherwise we are setting the group node to the origin since cameraVR local matrix is
+				// the identity matrix.  We then do futher work in xr-aframe to scale and correct both
+				// cameraVR and object (which is sceneCamObj).  By mirror 1.2.0 we are able to have our
+				// code work for both.  So we are removing 1.3.0's:
+				//   object.matrix.copy(cameraVR.matrix);
+				//   object.matrix.decompose(object.position, object.quaternion, object.scale);
+
 				const children = object.children;
 
 				for (let i = 0, l = children.length; i < l; i++) {
@@ -25159,6 +25176,8 @@ module.exports = anime;
 			info.programs = programCache.programs;
 			_this.capabilities = capabilities;
 			_this.extensions = extensions;
+			_this.attributes = attributes;
+			_this.geometries = geometries;
 			_this.properties = properties;
 			_this.renderLists = renderLists;
 			_this.shadowMap = shadowMap;
@@ -53901,7 +53920,7 @@ module.exports={
     "build": "shx mkdir -p build/ && npm run browserify -- --debug -t [ envify --INSPECTOR_VERSION dev ] -o build/aframe.js",
     "codecov": "codecov",
     "dev": "npm run build && cross-env INSPECTOR_VERSION=dev node ./scripts/budo -t envify",
-    "dist": "node scripts/updateVersionLog.js && npm run dist:min && npm run dist:max",
+    "dist": "node scripts/updateVersionLog.js && node scripts/buildTo.js",
     "dist:max": "npm run browserify -s -- --debug | exorcist dist/aframe-master.js.map > dist/aframe-master.js",
     "dist:min": "npm run browserify -s -- --debug -p [ minifyify --map aframe-master.min.js.map --output dist/aframe-master.min.js.map ] -o dist/aframe-master.min.js",
     "docs": "markserv --dir docs --port 9001",
@@ -53909,6 +53928,7 @@ module.exports={
     "ghpages": "ghpages -p gh-pages/",
     "lint": "semistandard -v | snazzy",
     "lint:fix": "semistandard --fix",
+    "postinstall": "patch-package",
     "precommit": "npm run lint",
     "prepush": "node scripts/testOnlyCheck.js",
     "prerelease": "node scripts/release.js 1.2.0 1.3.0",
@@ -53977,6 +53997,7 @@ module.exports={
     "minifyify": "^7.3.3",
     "mocha": "^3.0.2",
     "mozilla-download": "^1.1.1",
+    "patch-package": "^6.2.0",
     "replace-in-file": "^2.5.3",
     "semistandard": "^9.0.0",
     "shelljs": "^0.7.7",
@@ -58333,13 +58354,11 @@ module.exports.Component = registerComponent('look-controls', {
       magicWindowControls = this.magicWindowControls = new THREE.DeviceOrientationControls(this.magicWindowObject);
       if (typeof DeviceOrientationEvent !== 'undefined' && DeviceOrientationEvent.requestPermission) {
         magicWindowControls.enabled = false;
-        if (this.el.sceneEl.components['device-orientation-permission-ui'].permissionGranted) {
+        // we removed 'device-orientation-permission-ui' as a default enabled component.  This is
+        // a VR specific component.
+        this.el.sceneEl.addEventListener('deviceorientationpermissiongranted', function () {
           magicWindowControls.enabled = data.magicWindowTrackingEnabled;
-        } else {
-          this.el.sceneEl.addEventListener('deviceorientationpermissiongranted', function () {
-            magicWindowControls.enabled = data.magicWindowTrackingEnabled;
-          });
-        }
+        });
       }
     }
   },
@@ -59061,7 +59080,7 @@ module.exports.Component = registerComponent('material', {
     material.opacity = data.opacity;
     material.flatShading = data.flatShading;
     material.side = parseSide(data.side);
-    material.transparent = data.transparent !== false || data.opacity < 1.0;
+    material.transparent = data.transparent !== false || data.opacity < 1.0 || data.shader === 'shadow';
     material.vertexColors = parseVertexColors(data.vertexColors);
     material.visible = data.visible;
     material.blending = parseBlending(data.blending);
@@ -67592,6 +67611,11 @@ module.exports.registerComponent = function (name, definition) {
   });
 
   if (components[name]) {
+    if (name === 'xrweb') {
+      warn('xrweb component is being registered multiple times.');
+      return components[name];
+    }
+
     throw new Error('The component `' + name + '` has been already registered. ' +
                     'Check that you are not loading two versions of the same component ' +
                     'or two different components of the same name.');
@@ -68110,8 +68134,6 @@ module.exports.AScene = registerElement('a-scene', {
         this.setAttribute('inspector', '');
         this.setAttribute('keyboard-shortcuts', '');
         this.setAttribute('screenshot', '');
-        this.setAttribute('vr-mode-ui', '');
-        this.setAttribute('device-orientation-permission-ui', '');
       }
     },
 
@@ -68188,10 +68210,9 @@ module.exports.AScene = registerElement('a-scene', {
 
     attachedCallbackPostCamera: {
       value: function () {
-        var resize;
         var self = this;
 
-        window.addEventListener('load', resize);
+        window.addEventListener('load', self.resize);
         window.addEventListener('resize', function () {
           // Workaround for a Webkit bug (https://bugs.webkit.org/show_bug.cgi?id=170595)
           // where the window does not contain the correct viewport size
@@ -68204,10 +68225,15 @@ module.exports.AScene = registerElement('a-scene', {
             self.resize();
           }
         });
-        this.play();
 
-        // Add to scene index.
-        scenes.push(this);
+        function onPlay () {
+          self.play();
+
+          // Add to scene index.
+          scenes.push(self);
+        }
+
+        window.XR8 ? onPlay() : window.addEventListener('xrloaded', onPlay);
       },
       writable: window.debug
     },
@@ -68359,7 +68385,9 @@ module.exports.AScene = registerElement('a-scene', {
                 function requestFail (error) {
                   var useAR = xrMode === 'immersive-ar';
                   var mode = useAR ? 'AR' : 'VR';
-                  throw new Error('Failed to enter ' + mode + ' mode (`requestSession`) ' + error);
+                  reject(
+                    new Error('Failed to enter ' + mode + ' mode (`requestSession`) ' + error)
+                  );
                 }
               );
             });
@@ -68663,10 +68691,15 @@ module.exports.AScene = registerElement('a-scene', {
           antialias: !isMobile,
           canvas: this.canvas,
           logarithmicDepthBuffer: false,
-          powerPreference: 'high-performance'
+          powerPreference: 'high-performance',
+          preserveDrawingBuffer: true
         };
 
         this.maxCanvasSize = {height: 1920, width: 1920};
+
+        // Use WebGL2 as long as it is available or the user specifies webgl2: false.  Aframe-1.3.0
+        // is also WebGL2 by default.
+        let useWebGL2 = true;
 
         if (this.hasAttribute('renderer')) {
           rendererAttrString = this.getAttribute('renderer');
@@ -68688,6 +68721,15 @@ module.exports.AScene = registerElement('a-scene', {
             rendererConfig.alpha = rendererAttr.alpha === 'true';
           }
 
+          if (rendererAttr.preserveDrawingBuffer) {
+            rendererConfig.preserveDrawingBuffer = rendererAttr.preserveDrawingBuffer === 'true';
+          }
+
+          if (rendererAttr.webgl2) {
+            // If the user specifies 'renderer: "webgl2: false"' then we will use webgl 1.
+            useWebGL2 = rendererAttr.webgl2 !== 'false';
+          }
+
           this.maxCanvasSize = {
             width: rendererAttr.maxCanvasWidth
               ? parseInt(rendererAttr.maxCanvasWidth)
@@ -68698,7 +68740,13 @@ module.exports.AScene = registerElement('a-scene', {
           };
         }
 
-        renderer = this.renderer = new THREE.WebGLRenderer(rendererConfig);
+        // Even if the user wants webgl2, if it's not available then fall back to webgl1.
+        if (useWebGL2 && !document.createElement('canvas').getContext('webgl2')) {
+          useWebGL2 = false;
+        }
+
+        renderer = this.renderer = useWebGL2
+          ? new THREE.WebGLRenderer(rendererConfig) : new THREE.WebGL1Renderer(rendererConfig);
         renderer.setPixelRatio(window.devicePixelRatio);
         renderer.sortObjects = false;
         if (this.camera) { renderer.xr.setPoseTarget(this.camera.el.object3D); }
@@ -69005,7 +69053,7 @@ module.exports.setup = function setup (el, getCanvasSize) {
   var loaderAttribute = sceneEl.hasAttribute(ATTR_NAME) ? styleParser.parse(sceneEl.getAttribute(ATTR_NAME)) : undefined;
   var dotsColor = loaderAttribute && loaderAttribute.dotsColor || 'white';
   var backgroundColor = loaderAttribute && loaderAttribute.backgroundColor || '#24CAFF';
-  var loaderEnabled = loaderAttribute === undefined || loaderAttribute.enabled === 'true' || loaderAttribute.enabled === undefined; // true default
+  var loaderEnabled = loaderAttribute && (loaderAttribute.enabled === 'true' || loaderAttribute.enabled === undefined); // Disabled by default
   var loaderScene;
   var sphereGeometry;
   var sphereMaterial;
@@ -69095,9 +69143,7 @@ var MOBILE_HEAD_TAGS = module.exports.MOBILE_HEAD_TAGS = [
 
 var MOBILE_IOS_HEAD_TAGS = [
   // iOS-specific meta tags for fullscreen when pinning to homescreen.
-  Meta({name: 'apple-mobile-web-app-capable', content: 'yes'}),
-  Meta({name: 'apple-mobile-web-app-status-bar-style', content: 'black'}),
-  Link({rel: 'apple-touch-icon', href: 'https://aframe.io/images/aframe-logo-152.png'})
+  Meta({name: 'apple-mobile-web-app-capable', content: 'no'})
 ];
 
 function Meta (attrs) {
@@ -69105,14 +69151,6 @@ function Meta (attrs) {
     tagName: 'meta',
     attributes: attrs,
     exists: function () { return document.querySelector('meta[name="' + attrs.name + '"]'); }
-  };
-}
-
-function Link (attrs) {
-  return {
-    tagName: 'link',
-    attributes: attrs,
-    exists: function () { return document.querySelector('link[rel="' + attrs.rel + '"]'); }
   };
 }
 
@@ -69471,6 +69509,18 @@ Shader.prototype = {
   init: function (data) {
     this.attributes = this.initVariables(data, 'attribute');
     this.uniforms = this.initVariables(data, 'uniform');
+
+    // msdf and sdf use webgl2 by default during initialization.  If we are using a WebGL1 renderer,
+    // this will error.  Therefore, switch to the WebGL1 shaders here for the shaders if we're
+    // using WebGL1.
+    if ((this.name === 'msdf' || this.name === 'sdf') &&
+        this.el.sceneEl &&
+        this.el.sceneEl.renderer &&
+        this.el.sceneEl.renderer.isWebGL1Renderer) {
+      this.vertexShader = this.vertexShaderWebGL1;
+      this.fragmentShader = this.fragmentShaderWebGL1;
+    }
+
     this.material = new (this.raw ? THREE.RawShaderMaterial : THREE.ShaderMaterial)({
       // attributes: this.attributes,
       uniforms: this.uniforms,
@@ -70823,7 +70873,8 @@ require('./extras/components/');
 require('./extras/primitives/');
 
 console.log('A-Frame Version: 1.3.0 (Date 2022-02-04, Commit #cc3516ce)');
-console.log('THREE Version (https://github.com/supermedium/three.js):',
+console.log('8-Frame Version: 1.3.0 (Date 2022-05-05, Commit #6b720dee)');
+console.log('three Version (https://github.com/supermedium/three.js):',
             pkg.dependencies['super-three']);
 console.log('WebVR Polyfill Version:', pkg.dependencies['webvr-polyfill']);
 
@@ -70854,6 +70905,11 @@ module.exports = window.AFRAME = {
   utils: utils,
   version: pkg.version
 };
+
+// If 8frame loads after XR8, manually register the component
+if (window.XR8) {
+  window.AFRAME.registerComponent('xrweb', window.XR8.AFrame.xrwebComponent());
+}
 
 },{"../package":52,"../vendor/starts-with-polyfill":203,"./components/index":65,"./core/a-assets":108,"./core/a-cubemap":109,"./core/a-entity":110,"./core/a-mixin":111,"./core/a-node":112,"./core/a-register-element":113,"./core/component":114,"./core/geometry":115,"./core/scene/a-scene":117,"./core/scene/scenes":121,"./core/schema":123,"./core/shader":124,"./core/system":125,"./extras/components/":126,"./extras/primitives/":129,"./extras/primitives/getMeshMixin":128,"./extras/primitives/primitives":130,"./geometries/index":151,"./lib/three":162,"./shaders/index":164,"./style/aframe.css":171,"./style/rStats.css":172,"./systems/index":176,"./utils/":190,"./utils/isIOSOlderThan10":193,"custom-event-polyfill":7,"present":30,"promise-polyfill":32,"super-animejs":34,"webvr-polyfill":47}],161:[function(require,module,exports){
 window.aframeStats = function (scene) {
@@ -71203,8 +71259,10 @@ module.exports.Shader = registerShader('msdf', {
   raw: true,
 
   vertexShader: VERTEX_SHADER,
+  vertexShaderWebGL1: VERTEX_SHADER_WEBGL1,
 
-  fragmentShader: FRAGMENT_SHADER
+  fragmentShader: FRAGMENT_SHADER,
+  fragmentShaderWebGL1: FRAGMENT_SHADER_WEBGL1
 });
 
 },{"../core/shader":124}],167:[function(require,module,exports){
@@ -71633,8 +71691,9 @@ module.exports.Shader = registerShader('sdf', {
   raw: true,
 
   vertexShader: VERTEX_SHADER,
-
-  fragmentShader: FRAGMENT_SHADER
+  vertexShaderWebGL1: VERTEX_SHADER_WEBGL1,
+  fragmentShader: FRAGMENT_SHADER,
+  fragmentShaderWebGL1: FRAGMENT_SHADER_WEBGL1
 });
 
 },{"../core/shader":124}],169:[function(require,module,exports){
@@ -71642,19 +71701,14 @@ var registerShader = require('../core/shader').registerShader;
 var THREE = require('../lib/three');
 
 /**
- * Flat shader using THREE.ShadowMaterial.
+ * AR shadow shader using THREE.ShadowMaterial.
  */
 module.exports.Shader = registerShader('shadow', {
   schema: {
-    opacity: {default: 0.5},
-    transparent: {default: true},
-    alphaToCoverage: {default: true}
+    color: {type: 'color', default: 0x0},
+    opacity: {default: 0.4, min: 0.0, max: 1.0}
   },
 
-  /**
-   * Initializes the shader.
-   * Adds a reference from the scene to this entity as the camera.
-   */
   init: function (data) {
     this.rendererSystem = this.el.sceneEl.systems.renderer;
     this.material = new THREE.ShadowMaterial();
@@ -71662,11 +71716,10 @@ module.exports.Shader = registerShader('shadow', {
 
   update: function (data) {
     this.material.opacity = data.opacity;
-    this.material.alphaToCoverage = data.alphaToCoverage;
-    this.material.transparent = data.transparent;
+    this.material.color.set(data.color);
+    this.rendererSystem.applyColorCorrection(this.material.color);
   }
 });
-
 
 },{"../core/shader":124,"../lib/three":162}],170:[function(require,module,exports){
 var registerShader = require('../core/shader').registerShader;
@@ -72815,6 +72868,7 @@ module.exports.System = registerSystem('renderer', {
     colorManagement: {default: false},
     gammaOutput: {default: false},
     alpha: {default: true},
+    webgl2: {default: false},
     foveationLevel: {default: 0}
   },
 
@@ -75874,4 +75928,4 @@ module.exports = getWakeLock();
 
 },{"./util.js":204}]},{},[160])(160)
 });
-//# sourceMappingURL=aframe-v1.3.0.js.map
+//# sourceMappingURL=8frame-1.3.0.js.map
