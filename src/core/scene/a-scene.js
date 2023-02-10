@@ -89,8 +89,6 @@ class AScene extends AEntity {
     this.setAttribute('inspector', '');
     this.setAttribute('keyboard-shortcuts', '');
     this.setAttribute('screenshot', '');
-    this.setAttribute('vr-mode-ui', '');
-    this.setAttribute('device-orientation-permission-ui', '');
     super.connectedCallback();
 
     // Renderer initialization
@@ -148,26 +146,30 @@ class AScene extends AEntity {
   }
 
   attachedCallbackPostCamera () {
-    var resize;
     var self = this;
 
-    window.addEventListener('load', resize);
-    window.addEventListener('resize', function () {
-      // Workaround for a Webkit bug (https://bugs.webkit.org/show_bug.cgi?id=170595)
-      // where the window does not contain the correct viewport size
-      // after an orientation change. The window size is correct if the operation
-      // is postponed a few milliseconds.
-      // self.resize can be called directly once the bug above is fixed.
-      if (self.isIOS) {
-        setTimeout(self.resize, 100);
-      } else {
-        self.resize();
-      }
-    });
-    this.play();
+        window.addEventListener('load', self.resize);
+        window.addEventListener('resize', function () {
+          // Workaround for a Webkit bug (https://bugs.webkit.org/show_bug.cgi?id=170595)
+          // where the window does not contain the correct viewport size
+          // after an orientation change. The window size is correct if the operation
+          // is postponed a few milliseconds.
+          // self.resize can be called directly once the bug above is fixed.
+          if (self.isIOS) {
+            setTimeout(self.resize, 100);
+          } else {
+            self.resize();
+          }
+        });
 
-    // Add to scene index.
-    scenes.push(this);
+    function onPlay () {
+      self.play();
+
+      // Add to scene index.
+      scenes.push(self);
+    }
+
+    window.XR8 ? onPlay() : window.addEventListener('xrloaded', onPlay);
   }
 
   /**
@@ -307,7 +309,9 @@ class AScene extends AEntity {
             function requestFail (error) {
               var useAR = xrMode === 'immersive-ar';
               var mode = useAR ? 'AR' : 'VR';
-              throw new Error('Failed to enter ' + mode + ' mode (`requestSession`) ' + error);
+              reject(
+                new Error('Failed to enter ' + mode + ' mode (`requestSession`) ' + error)
+              );
             }
           );
         });
@@ -584,11 +588,15 @@ class AScene extends AEntity {
       antialias: !isMobile,
       canvas: this.canvas,
       logarithmicDepthBuffer: false,
-      powerPreference: 'high-performance'
+      powerPreference: 'high-performance',
+      preserveDrawingBuffer: true
     };
 
     this.maxCanvasSize = {height: 1920, width: 1920};
 
+    // Use WebGL2 as long as it is available or the user specifies webgl2: false.  Aframe-1.3.0
+    // is also WebGL2 by default.
+    let useWebGL2 = true;
     if (this.hasAttribute('renderer')) {
       rendererAttrString = this.getAttribute('renderer');
       rendererAttr = utils.styleParser.parse(rendererAttrString);
@@ -609,17 +617,32 @@ class AScene extends AEntity {
         rendererConfig.alpha = rendererAttr.alpha === 'true';
       }
 
-      this.maxCanvasSize = {
-        width: rendererAttr.maxCanvasWidth
-          ? parseInt(rendererAttr.maxCanvasWidth)
-          : this.maxCanvasSize.width,
-        height: rendererAttr.maxCanvasHeight
-          ? parseInt(rendererAttr.maxCanvasHeight)
-          : this.maxCanvasSize.height
-      };
-    }
+      if (rendererAttr.preserveDrawingBuffer) {
+        rendererConfig.preserveDrawingBuffer = rendererAttr.preserveDrawingBuffer === 'true';
+      }
 
-    renderer = this.renderer = new THREE.WebGLRenderer(rendererConfig);
+      if (rendererAttr.webgl2) {
+        // If the user specifies 'renderer: "webgl2: false"' then we will use webgl 1.
+        useWebGL2 = rendererAttr.webgl2 !== 'false';
+      }
+
+    this.maxCanvasSize = {
+      width: rendererAttr.maxCanvasWidth
+        ? parseInt(rendererAttr.maxCanvasWidth)
+        : this.maxCanvasSize.width,
+      height: rendererAttr.maxCanvasHeight
+        ? parseInt(rendererAttr.maxCanvasHeight)
+        : this.maxCanvasSize.height
+    };
+  }
+
+  // Even if the user wants webgl2, if it's not available then fall back to webgl1.
+  if (useWebGL2 && !document.createElement('canvas').getContext('webgl2')) {
+    useWebGL2 = false;
+  }
+
+    renderer = this.renderer = useWebGL2
+      ? new THREE.WebGLRenderer(rendererConfig) : new THREE.WebGL1Renderer(rendererConfig);
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.sortObjects = false;
     if (this.camera) { renderer.xr.setPoseTarget(this.camera.el.object3D); }
