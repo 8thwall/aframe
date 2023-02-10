@@ -148,19 +148,19 @@ class AScene extends AEntity {
   attachedCallbackPostCamera () {
     var self = this;
 
-        window.addEventListener('load', self.resize);
-        window.addEventListener('resize', function () {
-          // Workaround for a Webkit bug (https://bugs.webkit.org/show_bug.cgi?id=170595)
-          // where the window does not contain the correct viewport size
-          // after an orientation change. The window size is correct if the operation
-          // is postponed a few milliseconds.
-          // self.resize can be called directly once the bug above is fixed.
-          if (self.isIOS) {
-            setTimeout(self.resize, 100);
-          } else {
-            self.resize();
-          }
-        });
+    window.addEventListener('load', self.resize);
+    window.addEventListener('resize', function () {
+      // Workaround for a Webkit bug (https://bugs.webkit.org/show_bug.cgi?id=170595)
+      // where the window does not contain the correct viewport size
+      // after an orientation change. The window size is correct if the operation
+      // is postponed a few milliseconds.
+      // self.resize can be called directly once the bug above is fixed.
+      if (self.isIOS) {
+        setTimeout(self.resize, 100);
+      } else {
+        self.resize();
+      }
+    });
 
     function onPlay () {
       self.play();
@@ -626,20 +626,20 @@ class AScene extends AEntity {
         useWebGL2 = rendererAttr.webgl2 !== 'false';
       }
 
-    this.maxCanvasSize = {
-      width: rendererAttr.maxCanvasWidth
-        ? parseInt(rendererAttr.maxCanvasWidth)
-        : this.maxCanvasSize.width,
-      height: rendererAttr.maxCanvasHeight
-        ? parseInt(rendererAttr.maxCanvasHeight)
-        : this.maxCanvasSize.height
-    };
-  }
+      this.maxCanvasSize = {
+        width: rendererAttr.maxCanvasWidth
+          ? parseInt(rendererAttr.maxCanvasWidth)
+          : this.maxCanvasSize.width,
+        height: rendererAttr.maxCanvasHeight
+          ? parseInt(rendererAttr.maxCanvasHeight)
+          : this.maxCanvasSize.height
+      };
+    }
 
-  // Even if the user wants webgl2, if it's not available then fall back to webgl1.
-  if (useWebGL2 && !document.createElement('canvas').getContext('webgl2')) {
-    useWebGL2 = false;
-  }
+    // Even if the user wants webgl2, if it's not available then fall back to webgl1.
+    if (useWebGL2 && !document.createElement('canvas').getContext('webgl2')) {
+      useWebGL2 = false;
+    }
 
     renderer = this.renderer = useWebGL2
       ? new THREE.WebGLRenderer(rendererConfig) : new THREE.WebGL1Renderer(rendererConfig);
