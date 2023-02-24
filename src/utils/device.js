@@ -33,7 +33,9 @@ if (isWebXRAvailable) {
       return;
     }
     if (sceneEl.hasLoaded) {
-      sceneEl.components['xr-mode-ui'].updateEnterInterfaces();
+      if (sceneEl.components['xr-mode-ui']) {
+        sceneEl.components['xr-mode-ui'].updateEnterInterfaces();
+      }
     } else {
       sceneEl.addEventListener('loaded', updateEnterInterfaces);
     }
