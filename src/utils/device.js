@@ -33,7 +33,9 @@ if (isWebXRAvailable) {
       return;
     }
     if (sceneEl.hasLoaded) {
-      sceneEl.components['vr-mode-ui'].updateEnterInterfaces();
+      if (sceneEl.components['vr-mode-ui']) {
+        sceneEl.components['vr-mode-ui'].updateEnterInterfaces();
+      }
     } else {
       sceneEl.addEventListener('loaded', updateEnterInterfaces);
     }
