@@ -33,7 +33,9 @@ if (isWebXRAvailable) {
       return;
     }
     if (sceneEl.hasLoaded) {
-      sceneEl.components['vr-mode-ui'].updateEnterInterfaces();
+      if (sceneEl.components['vr-mode-ui']) {
+        sceneEl.components['vr-mode-ui'].updateEnterInterfaces();
+      }
     } else {
       sceneEl.addEventListener('loaded', updateEnterInterfaces);
     }
@@ -90,9 +92,6 @@ module.exports.checkHeadsetConnected = checkHeadsetConnected;
 
 function checkARSupport () { return supportsARSession; }
 module.exports.checkARSupport = checkARSupport;
-
-function checkVRSupport () { return supportsVRSession; }
-module.exports.checkVRSupport = checkVRSupport;
 
 /**
  * Checks if browser is mobile and not stand-alone dedicated vr device.
