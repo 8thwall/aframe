@@ -594,9 +594,9 @@ class AScene extends AEntity {
 
     this.maxCanvasSize = {height: 1920, width: 1920};
 
-    // By default, we are having 8Frame 1.1.0 run WebGL1 instead of vanilla Aframe-1.1.0's
-    // default behavior of using WebGL2.
-    let useWebGL2 = false;
+    // Use WebGL2 as long as it is available or the user specifies webgl2: false.  Aframe-1.3.0
+    // and later are also WebGL2 by default.
+    let useWebGL2 = true;
     if (this.hasAttribute('renderer')) {
       rendererAttrString = this.getAttribute('renderer');
       rendererAttr = utils.styleParser.parse(rendererAttrString);
@@ -622,10 +622,8 @@ class AScene extends AEntity {
       }
 
       if (rendererAttr.webgl2) {
-        // We only want to use WebGL2 if they explicitly specify 'renderer: "webgl2: true"' and
-        // their device is capable of webgl2 rendering.
-        const isWebGL2Available = !!document.createElement('canvas').getContext('webgl2');
-        useWebGL2 = rendererAttr.webgl2 === 'true' && isWebGL2Available;
+        // If the user specifies 'renderer: "webgl2: false"' then we will use webgl 1.
+        useWebGL2 = rendererAttr.webgl2 !== 'false';
       }
 
       this.maxCanvasSize = {
@@ -636,6 +634,11 @@ class AScene extends AEntity {
           ? parseInt(rendererAttr.maxCanvasHeight)
           : this.maxCanvasSize.height
       };
+    }
+
+    // Even if the user wants webgl2, if it's not available then fall back to webgl1.
+    if (useWebGL2 && !document.createElement('canvas').getContext('webgl2')) {
+      useWebGL2 = false;
     }
 
     renderer = this.renderer = useWebGL2
