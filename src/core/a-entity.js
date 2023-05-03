@@ -19,7 +19,7 @@ var ONCE = {once: true};
  *
  * @member {object} components - entity's currently initialized components.
  * @member {object} object3D - three.js object.
- * @member {array} states
+ * @member {array} states.
  * @member {boolean} isPlaying - false if dynamic behavior of the entity is paused.
  */
 class AEntity extends ANode {
@@ -62,8 +62,8 @@ class AEntity extends ANode {
   */
   connectedCallback () {
     // Defer if DOM is not ready.
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', this.connectedCallback.bind(this));
+    if (document.readyState !== 'complete') {
+      document.addEventListener('readystatechange', this.onReadyStateChange.bind(this));
       return;
     }
 

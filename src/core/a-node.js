@@ -32,10 +32,16 @@ class ANode extends HTMLElement {
     this.mixinEls = [];
   }
 
+  onReadyStateChange () {
+    if (document.readyState === 'complete') {
+      this.doConnectedCallback();
+    }
+  }
+
   connectedCallback () {
     // Defer if DOM is not ready.
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', this.connectedCallback.bind(this));
+    if (document.readyState !== 'complete') {
+      document.addEventListener('readystatechange', this.onReadyStateChange.bind(this));
       return;
     }
     ANode.prototype.doConnectedCallback.call(this);
@@ -140,8 +146,8 @@ class ANode extends HTMLElement {
       });
 
       self.hasLoaded = true;
-      if (cb) { cb(); }
       self.setupMutationObserver();
+      if (cb) { cb(); }
       self.emit('loaded', undefined, false);
     });
   }
@@ -151,7 +157,7 @@ class ANode extends HTMLElement {
    * for attributes defined statically via observedAttributes.
    * One can assign any arbitrary components to an A-Frame entity
    * hence we can't know the list of attributes beforehand.
-   * This function setup a mutation observer to keep track of the entiy attribute changes
+   * This function setup a mutation observer to keep track of the entity attribute changes
    * in the DOM and update components accordingly.
    */
   setupMutationObserver () {

@@ -40,11 +40,6 @@ var Component = module.exports.Component = function (el, attrValue, id) {
   this.attrName = this.name + (id ? '__' + id : '');
   this.evtDetail = {id: this.id, name: this.name};
   this.initialized = false;
-  this.isSingleProperty = isSingleProp(this.schema);
-  this.isSinglePropertyObject = this.isSingleProperty &&
-                                isObject(parseProperty(undefined, this.schema)) &&
-                                !(this.schema.default instanceof window.HTMLElement);
-  this.isObjectBased = !this.isSingleProperty || this.isSinglePropertyObject;
   this.el.components[this.attrName] = this;
   this.objectPool = objectPools[this.name];
 
@@ -234,9 +229,9 @@ Component.prototype = {
   /**
    * Given an HTML attribute value parses the string based on the component schema.
    * To avoid double parsings of strings into strings we store the original instead
-   * of the parsed one
+   * of the parsed one.
    *
-   * @param {string} value - HTML attribute value
+   * @param {string} value - HTML attribute value.
    */
   parseAttrValueForCache: function (value) {
     var parsedValue;
@@ -276,7 +271,7 @@ Component.prototype = {
    *
    * @param {string} attrValue - HTML attribute value.
    *        If undefined, use the cached attribute value and continue updating properties.
-   * @param {boolean} clobber - The previous component data is overwritten by the atrrValue
+   * @param {boolean} clobber - The previous component data is overwritten by the atrrValue.
    */
   updateProperties: function (attrValue, clobber) {
     var el = this.el;
@@ -452,7 +447,7 @@ Component.prototype = {
    *
    * Some components might want to mutate their schema based on certain properties.
    * e.g., Material component changes its schema based on `shader` to account for different
-   * uniforms
+   * uniforms.
    *
    * @param {object} schemaAddon - Schema chunk that extend base schema.
    */
@@ -479,7 +474,7 @@ Component.prototype = {
    * @param {object} newData - Element new data.
    * @param {boolean} clobber - The previous data is completely replaced by the new one.
    * @param {boolean} silent - Suppress warning messages.
-   * @return {object} The component data
+   * @return {object} The component data.
    */
   buildData: function (newData, clobber, silent) {
     var componentDefined;
@@ -519,7 +514,6 @@ Component.prototype = {
       data = previousData instanceof Object
         ? copyData(nextData, previousData)
         : nextData;
-
       // Apply defaults.
       for (key in schema) {
         defaultValue = schema[key].default;
@@ -615,6 +609,7 @@ module.exports.registerComponent = function (name, definition) {
   var proto = {};
   var schema;
   var schemaIsSingleProp;
+  var isSinglePropertyObject;
 
   // Warning if component is statically registered after the scene.
   if (document.currentScript && document.currentScript !== aframeScript) {
@@ -676,8 +671,12 @@ module.exports.registerComponent = function (name, definition) {
 
   schema = utils.extend(processSchema(NewComponent.prototype.schema,
                                       NewComponent.prototype.name));
-  schemaIsSingleProp = isSingleProp(NewComponent.prototype.schema);
+  NewComponent.prototype.isSingleProperty = schemaIsSingleProp = isSingleProp(NewComponent.prototype.schema);
+  NewComponent.prototype.isSinglePropertyObject = isSinglePropertyObject = schemaIsSingleProp &&
+                                                  isObject(parseProperty(undefined, schema)) &&
+                                                  !(schema.default instanceof window.HTMLElement);
 
+  NewComponent.prototype.isObjectBased = !schemaIsSingleProp || isSinglePropertyObject;
   // Keep track of keys that may potentially change the schema.
   if (!schemaIsSingleProp) {
     NewComponent.prototype.schemaChangeKeys = [];
@@ -694,7 +693,9 @@ module.exports.registerComponent = function (name, definition) {
   components[name] = {
     Component: NewComponent,
     dependencies: NewComponent.prototype.dependencies,
-    isSingleProp: schemaIsSingleProp,
+    isSingleProperty: NewComponent.prototype.isSingleProperty,
+    isSinglePropertyObject: NewComponent.prototype.isSinglePropertyObject,
+    isObjectBased: NewComponent.prototype.isObjectBased,
     multiple: NewComponent.prototype.multiple,
     name: name,
     parse: NewComponent.prototype.parse,
@@ -730,7 +731,7 @@ function copyData (dest, sourceData) {
 * Object extending with checking for single-property schema.
 *
 * @param dest - Destination object or value.
-* @param source - Source object or value
+* @param source - Source object or value.
 * @param {boolean} isObjectBased - Whether values are objects.
 * @returns Overridden object or value.
 */
