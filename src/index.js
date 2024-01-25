@@ -51,7 +51,7 @@ if (!window.cordova && window.location.protocol === 'file:') {
     'This HTML file is currently being served via the file:// protocol. ' +
     'Assets, textures, and models WILL NOT WORK due to cross-origin policy! ' +
     'Please use a local or hosted server: ' +
-    'https://aframe.io/docs/0.5.0/introduction/getting-started.html#using-a-local-server.');
+    'https://aframe.io/docs/1.4.0/introduction/installation.html#use-a-local-server.');
 }
 
 require('present'); // Polyfill `performance.now()`.
@@ -92,7 +92,7 @@ require('./core/a-mixin');
 require('./extras/components/');
 require('./extras/primitives/');
 
-console.log('A-Frame Version: 1.4.2 (Date 2023-04-22, Commit #4e521f1f)');
+console.log('A-Frame Version: 1.5.0 (Date 2024-01-25, Commit #824464a0)');
 console.log('THREE Version (https://github.com/supermedium/three.js):',
             pkg.dependencies['super-three']);
 console.log('WebVR Polyfill Version:', pkg.dependencies['webvr-polyfill']);

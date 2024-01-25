@@ -9,8 +9,8 @@ var isWebXRAvailable = require('../utils/').device.isWebXRAvailable;
 
 var GAMEPAD_ID_WEBXR = 'oculus-go';
 var GAMEPAD_ID_WEBVR = 'Oculus Go';
-
-var OCULUS_GO_CONTROLLER_MODEL_URL = 'https://cdn.aframe.io/controllers/oculus/go/oculus-go-controller.gltf';
+var AFRAME_CDN_ROOT = require('../constants').AFRAME_CDN_ROOT;
+var OCULUS_GO_CONTROLLER_MODEL_URL = AFRAME_CDN_ROOT + 'controllers/oculus/go/oculus-go-controller.gltf';
 
 // Prefix for Gen1 and Gen2 Oculus Touch Controllers.
 var GAMEPAD_ID_PREFIX = isWebXRAvailable ? GAMEPAD_ID_WEBXR : GAMEPAD_ID_WEBVR;
@@ -83,7 +83,6 @@ module.exports.Component = registerComponent('oculus-go-controls', {
     this.onButtonTouchEnd = function (evt) { onButtonEvent(evt.detail.id, 'touchend', self); };
     this.controllerPresent = false;
     this.lastControllerCheck = 0;
-    this.rendererSystem = this.el.sceneEl.systems.renderer;
     this.bindMethods();
   },
 
@@ -197,6 +196,5 @@ module.exports.Component = registerComponent('oculus-go-controls', {
     }
     button = buttonMeshes[buttonName];
     button.material.color.set(color);
-    this.rendererSystem.applyColorCorrection(button.material.color);
   }
 });

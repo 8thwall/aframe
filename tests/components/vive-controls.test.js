@@ -17,7 +17,7 @@ suite('vive-controls', function () {
       controlsSystem = el.sceneEl.systems['tracked-controls-webvr'];
       done();
     });
-    el.setAttribute('vive-controls', 'hand: right; model: false');  // To ensure index = 0.
+    el.setAttribute('vive-controls', 'hand: right; model: true');  // To ensure index = 0.
   });
 
   suite('checkIfControllerPresent', function () {
@@ -143,7 +143,7 @@ suite('vive-controls', function () {
 
   suite('buttonchanged', function () {
     // Generate 3 tests for each button. Verify that it fires up/down/changed for all remapped buttons.
-    [ { button: 'trackpad', id: 0 },
+    [{ button: 'trackpad', id: 0 },
       { button: 'trigger', id: 1 },
       { button: 'grip', id: 2 },
       { button: 'menu', id: 3 },

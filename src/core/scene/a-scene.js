@@ -56,6 +56,7 @@ class AScene extends AEntity {
     self.systems = {};
     self.systemNames = [];
     self.time = self.delta = 0;
+    self.usedOfferSession = false;
 
     self.behaviors = {tick: [], tock: []};
     self.hasLoaded = false;
@@ -89,7 +90,7 @@ class AScene extends AEntity {
     this.setAttribute('inspector', '');
     this.setAttribute('keyboard-shortcuts', '');
     this.setAttribute('screenshot', '');
-    this.setAttribute('vr-mode-ui', '');
+    this.setAttribute('xr-mode-ui', '');
     this.setAttribute('device-orientation-permission-ui', '');
     super.connectedCallback();
 
@@ -270,13 +271,15 @@ class AScene extends AEntity {
    * @param {bool?} useAR - if true, try immersive-ar mode
    * @returns {Promise}
    */
-  enterVR (useAR) {
+  enterVR (useAR, useOfferSession) {
     var self = this;
     var vrDisplay;
     var vrManager = self.renderer.xr;
     var xrInit;
 
     // Don't enter VR if already in VR.
+    if (useOfferSession && (!navigator.xr || !navigator.xr.offerSession)) { return Promise.resolve('OfferSession is not supported.'); }
+    if (self.usedOfferSession && useOfferSession) { return Promise.resolve('OfferSession was already called.'); }
     if (this.is('vr-mode')) { return Promise.resolve('Already in VR.'); }
 
     // Has VR.
@@ -294,9 +297,16 @@ class AScene extends AEntity {
         var xrMode = useAR ? 'immersive-ar' : 'immersive-vr';
         xrInit = this.sceneEl.systems.webxr.sessionConfiguration;
         return new Promise(function (resolve, reject) {
-          navigator.xr.requestSession(xrMode, xrInit).then(
+          var requestSession = useOfferSession ? navigator.xr.offerSession.bind(navigator.xr) : navigator.xr.requestSession.bind(navigator.xr);
+          self.usedOfferSession |= useOfferSession;
+          requestSession(xrMode, xrInit).then(
             function requestSuccess (xrSession) {
               self.xrSession = xrSession;
+
+              if (useOfferSession) {
+                self.usedOfferSession = false;
+              }
+
               vrManager.layersEnabled = xrInit.requiredFeatures.indexOf('layers') !== -1;
               vrManager.setSession(xrSession).then(function () {
                 vrManager.setFoveation(rendererSystem.foveationLevel);
@@ -308,7 +318,7 @@ class AScene extends AEntity {
             function requestFail (error) {
               var useAR = xrMode === 'immersive-ar';
               var mode = useAR ? 'AR' : 'VR';
-              throw new Error('Failed to enter ' + mode + ' mode (`requestSession`) ' + error);
+              reject(new Error('Failed to enter ' + mode + ' mode (`requestSession`)', { cause: error }));
             }
           );
         });
@@ -610,6 +620,10 @@ class AScene extends AEntity {
         rendererConfig.alpha = rendererAttr.alpha === 'true';
       }
 
+      if (rendererAttr.multiviewStereo) {
+        rendererConfig.multiviewStereo = rendererAttr.multiviewStereo === 'true';
+      }
+
       this.maxCanvasSize = {
         width: rendererAttr.maxCanvasWidth
           ? parseInt(rendererAttr.maxCanvasWidth)
@@ -622,7 +636,7 @@ class AScene extends AEntity {
 
     renderer = this.renderer = new THREE.WebGLRenderer(rendererConfig);
     renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.sortObjects = false;
+
     if (this.camera) { renderer.xr.setPoseTarget(this.camera.el.object3D); }
     this.addEventListener('camera-set-active', function () {
       renderer.xr.setPoseTarget(self.camera.el.object3D);

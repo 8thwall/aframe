@@ -67,11 +67,10 @@ module.exports.Component = registerComponent('generic-tracked-controller-control
     this.controllerPresent = false;
     this.wasControllerConnected = false;
     this.lastControllerCheck = 0;
-    this.rendererSystem = this.el.sceneEl.systems.renderer;
     this.bindMethods();
 
     // generic-tracked-controller-controls has the lowest precedence.
-    // We must diable this component if there are more specialized controls components.
+    // Disable this component if there are more specialized controls components.
     this.el.addEventListener('controllerconnected', function (evt) {
       if (evt.detail.name === self.name) { return; }
       self.wasControllerConnected = true;
@@ -150,6 +149,7 @@ module.exports.Component = registerComponent('generic-tracked-controller-control
   },
 
   onControllersUpdate: function () {
+    if (!this.wasControllerConnected) { return; }
     this.checkIfControllerPresent();
   },
 
@@ -172,5 +172,10 @@ module.exports.Component = registerComponent('generic-tracked-controller-control
     });
     modelEl.setAttribute('material', {color: this.data.color});
     this.el.appendChild(modelEl);
+    this.el.emit('controllermodelready', {
+      name: 'generic-tracked-controller-controls',
+      model: this.modelEl,
+      rayOrigin: {origin: {x: 0, y: 0, z: -0.01}, direction: {x: 0, y: 0, z: -1}}
+    });
   }
 });

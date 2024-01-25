@@ -7,7 +7,8 @@ var checkControllerPresentAndSetup = trackedControlsUtils.checkControllerPresent
 var emitIfAxesChanged = trackedControlsUtils.emitIfAxesChanged;
 var onButtonEvent = trackedControlsUtils.onButtonEvent;
 
-var INDEX_CONTROLLER_MODEL_BASE_URL = 'https://cdn.aframe.io/controllers/valve/index/valve-index-';
+var AFRAME_CDN_ROOT = require('../constants').AFRAME_CDN_ROOT;
+var INDEX_CONTROLLER_MODEL_BASE_URL = AFRAME_CDN_ROOT + 'controllers/valve/index/valve-index-';
 var INDEX_CONTROLLER_MODEL_URL = {
   left: INDEX_CONTROLLER_MODEL_BASE_URL + 'left.glb',
   right: INDEX_CONTROLLER_MODEL_BASE_URL + 'right.glb'
@@ -73,7 +74,6 @@ module.exports.Component = registerComponent('valve-index-controls', {
     this.onButtonTouchEnd = function (evt) { onButtonEvent(evt.detail.id, 'touchend', self); };
     this.onButtonTouchStart = function (evt) { onButtonEvent(evt.detail.id, 'touchstart', self); };
     this.previousButtonValues = {};
-    this.rendererSystem = this.el.sceneEl.systems.renderer;
 
     this.bindMethods();
   },

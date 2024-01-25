@@ -14,7 +14,7 @@ examples:
     src: https://glitch.com/edit/#!/aframe-basic-guide-with-environment?path=index.html
 ---
 
-[primitives]: ../primitives/
+[primitives]: ../introduction/html-and-primitives.md
 [position]: ../components/position.md
 [rotation]: ../components/rotation.md
 [scale]: ../components/scale.md
@@ -40,7 +40,7 @@ We start out with a minimal HTML structure:
 ```html
 <html>
   <head>
-    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
   </head>
   <body>
     <a-scene>
@@ -228,7 +228,7 @@ First, include the environment component using a script tag after A-Frame:
 
 ```html
 <head>
-  <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
   <script src="https://unpkg.com/aframe-environment-component/dist/aframe-environment-component.min.js"></script>
 </head>
 ```

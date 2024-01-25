@@ -14,7 +14,8 @@ var warn = utils.debug('components:windows-motion-controls:warn');
 
 var DEFAULT_HANDEDNESS = require('../constants').DEFAULT_HANDEDNESS;
 
-var MODEL_BASE_URL = 'https://cdn.aframe.io/controllers/microsoft/';
+var AFRAME_CDN_ROOT = require('../constants').AFRAME_CDN_ROOT;
+var MODEL_BASE_URL = AFRAME_CDN_ROOT + 'controllers/microsoft/';
 var MODEL_FILENAMES = { left: 'left.glb', right: 'right.glb', default: 'universal.glb' };
 
 var isWebXRAvailable = require('../utils/').device.isWebXRAvailable;
@@ -476,6 +477,7 @@ module.exports.Component = registerComponent('windows-motion-controls', {
 
   setModelVisibility: function (visible) {
     var model = this.el.getObject3D('mesh');
+    if (!this.controllerPresent) { return; }
     visible = visible !== undefined ? visible : this.modelVisible;
     this.modelVisible = visible;
     if (!model) { return; }
