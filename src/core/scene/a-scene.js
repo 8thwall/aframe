@@ -603,9 +603,6 @@ class AScene extends AEntity {
 
     this.maxCanvasSize = {height: 1920, width: 1920};
 
-    // Use WebGL2 as long as it is available or the user specifies webgl2: false.  Aframe-1.3.0
-    // and later are also WebGL2 by default.
-    let useWebGL2 = true;
     if (this.hasAttribute('renderer')) {
       rendererAttrString = this.getAttribute('renderer');
       rendererAttr = utils.styleParser.parse(rendererAttrString);
@@ -632,11 +629,6 @@ class AScene extends AEntity {
 
       if (rendererAttr.preserveDrawingBuffer) {
         rendererConfig.preserveDrawingBuffer = rendererAttr.preserveDrawingBuffer === 'true';
-      }
-
-      if (rendererAttr.webgl2) {
-        // If the user specifies 'renderer: "webgl2: false"' then we will use webgl 1.
-        useWebGL2 = rendererAttr.webgl2 !== 'false';
       }
 
       this.maxCanvasSize = {

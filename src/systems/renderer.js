@@ -24,7 +24,6 @@ module.exports.System = registerSystem('renderer', {
     sortTransparentObjects: {default: false},
     colorManagement: {default: true},
     alpha: {default: true},
-    webgl2: {default: false},
     foveationLevel: {default: 1}
   },
 

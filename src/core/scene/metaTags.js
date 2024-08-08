@@ -22,6 +22,14 @@ function Meta (attrs) {
   };
 }
 
+function Link (attrs) {
+  return {
+    tagName: 'link',
+    attributes: attrs,
+    exists: function () { return document.querySelector('link[rel="' + attrs.rel + '"]'); }
+  };
+}
+
 /**
  * Injects the necessary metatags in the document for mobile support:
  * 1. Prevent the user to zoom in the document.
