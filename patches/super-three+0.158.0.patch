@@ -4,7 +4,7 @@ index 3aea48d..c73c860 100644
 +++ b/node_modules/super-three/build/three.module.js
 @@ -26167,7 +26167,16 @@ class WebXRManager extends EventDispatcher {
  
- 			const cameras = cameraVR.cameras;
+ 			const cameras = cameraXR.cameras;
  			var object = poseTarget || camera;
 -			const parent = object.parent;
 +			// const parent = object.parent;
@@ -18,23 +18,7 @@ index 3aea48d..c73c860 100644
 +			// with both 1.2.0 and 1.3.0.
 +			const parent = camera.parent;
  
- 			updateCamera( cameraVR, parent );
- 
-@@ -26181,8 +26190,13 @@ class WebXRManager extends EventDispatcher {
- 
- 			// update user camera and its children
- 			object.matrixWorld.copy( cameraVR.matrixWorld );
--			object.matrix.copy( cameraVR.matrix );
--			object.matrix.decompose( object.position, object.quaternion, object.scale );
-+			// AFrame 1.2.0 only copies over matrixWorld which is giving us the correct result.
-+			// Otherwise we are setting the group node to the origin since cameraVR local matrix is
-+			// the identity matrix.  We then do futher work in xr-aframe to scale and correct both
-+			// cameraVR and object (which is sceneCamObj).  By mirror 1.2.0 we are able to have our
-+			// code work for both. So we are removing version 1.3.0 logic here:
-+			// object.matrix.copy( cameraVR.matrix );
-+			// object.matrix.decompose( object.position, object.quaternion, object.scale );
- 
- 			const children = object.children;
+ 			updateCamera( cameraXR, parent );
  
 @@ -27766,6 +27780,8 @@ function WebGLRenderer( parameters = {} ) {
  		info.programs = programCache.programs;
