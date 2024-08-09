@@ -17,6 +17,5 @@ module.exports.Shader = registerShader('shadow', {
   update: function (data) {
     this.material.opacity = data.opacity;
     this.material.color.set(data.color);
-    this.rendererSystem.applyColorCorrection(this.material.color);
   }
 });
